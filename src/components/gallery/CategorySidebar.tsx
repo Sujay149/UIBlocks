@@ -68,7 +68,7 @@ const getCategoryIcon = (category: string) => {
     tables: Table2,
     layouts: Layout,
     typography: Type,
-    carousel: Image,
+    carousel: ImageIcon,
     toast: Bell,
     loaders: Loader2Icon,
     spinners: CircleDot,

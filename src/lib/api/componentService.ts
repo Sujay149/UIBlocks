@@ -113,3 +113,36 @@ export const searchComponents = async (query: string): Promise<ComponentsListRes
   
   return response.json();
 };
+
+// Create a new component
+export const createComponent = async (data: {
+  name: string;
+  code: string;
+  category: string;
+  preview: string;
+  createdBy?: string;
+  tags?: string[];
+}): Promise<DBUIComponent> => {
+  const response = await fetch(`${API_CONFIG.baseUrl}${API_CONFIG.endpoints.components}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: response.statusText }));
+    throw new Error(errorData.error || "Failed to create component");
+  }
+
+  return response.json();
+};
+
+// Export componentService object
+export const componentService = {
+  create: createComponent,
+  fetchAll: fetchComponents,
+  fetchById: fetchComponentById,
+  search: searchComponents,
+};

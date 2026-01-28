@@ -6,10 +6,13 @@ import { ComponentModal } from "@/components/gallery/ComponentModal";
 import { SearchCommandPalette } from "@/components/gallery/SearchCommandPalette";
 import { LoginModal } from "@/components/gallery/LoginModal";
 import { CreateComponentModal } from "@/components/gallery/CreateComponentModal";
+import { BulkImportModal } from "@/components/gallery/BulkImportModal";
 import { EditComponentModal } from "@/components/gallery/EditComponentModal";
 import { useComponentsList, useCategories } from "@/hooks/useComponents";
 import { UIComponentWithPreview } from "@/lib/api/types";
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
+import { useAdmin } from "@/contexts/AdminContext";
+import { Button } from "@/components/ui/button";
 
 const Components = () => {
   const [activeCategory, setActiveCategory] = useState("All");
@@ -19,7 +22,9 @@ const Components = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const { isAdmin } = useAdmin();
 
   // Fetch components and categories from API
   const { data: components = [], isLoading: componentsLoading, refetch } = useComponentsList(activeCategory);
@@ -98,6 +103,20 @@ const Components = () => {
 
           {/* Main Content */}
           <div className="flex-1 min-w-0 px-6">
+            {/* Bulk Import Button (Visible on Desktop) */}
+            {isAdmin && (
+              <div className="mb-6 flex justify-end">
+                <Button 
+                  onClick={() => setBulkImportOpen(true)}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Bulk Import
+                </Button>
+              </div>
+            )}
+            
             {/* Component Grid */}
             {componentsLoading ? (
                 <div className="flex items-center justify-center py-20">
@@ -167,6 +186,13 @@ const Components = () => {
         onClose={() => setEditOpen(false)}
         onSuccess={() => refetch()}
         component={editingComponent}
+      />
+
+      {/* Bulk Import Modal */}
+      <BulkImportModal
+        open={bulkImportOpen}
+        onOpenChange={setBulkImportOpen}
+        onSuccess={() => refetch()}
       />
     </div>
   );
