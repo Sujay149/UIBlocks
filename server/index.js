@@ -125,13 +125,11 @@ app.delete('/api/components/:id', async (req, res) => {
   }
 });
 
-// Start server (only for local development)
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📊 API endpoints available at http://localhost:${PORT}/api`);
-  });
-}
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`📊 API endpoints available at http://localhost:${PORT}/api`);
+});
 
 // Export for Vercel serverless
 export default app;
