@@ -1,14 +1,7 @@
 import { neon } from '@neondatabase/serverless';
-import dotenv from 'dotenv';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Load .env from parent directory
-dotenv.config({ path: join(__dirname, '..', '.env') });
-
+// On Vercel, environment variables are automatically available
+// No need to load .env file
 const sql = neon(process.env.DATABASE_URL);
 
 export const db = sql;
