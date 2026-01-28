@@ -1,10 +1,10 @@
 // API Configuration
 export const API_CONFIG = {
   // Backend API URL
-  baseUrl: import.meta.env.VITE_API_BASE_URL || "http://localhost:3001",
+  baseUrl: import.meta.env.VITE_API_BASE_URL || "https://ui-blocks-wfbw.vercel.app",
   
   // Set to false to use real database
-  useMockData: true,
+  useMockData: false,
   
   // API endpoints
   endpoints: {
