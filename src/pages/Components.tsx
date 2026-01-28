@@ -10,9 +10,10 @@ import { BulkImportModal } from "@/components/gallery/BulkImportModal";
 import { EditComponentModal } from "@/components/gallery/EditComponentModal";
 import { useComponentsList, useCategories } from "@/hooks/useComponents";
 import { UIComponentWithPreview } from "@/lib/api/types";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, Trash2 } from "lucide-react";
 import { useAdmin } from "@/contexts/AdminContext";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const Components = () => {
   const [activeCategory, setActiveCategory] = useState("All");
@@ -24,7 +25,10 @@ const Components = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectionMode, setSelectionMode] = useState(false);
   const { isAdmin } = useAdmin();
+  const { toast } = useToast();
 
   // Fetch components and categories from API
   const { data: components = [], isLoading: componentsLoading, refetch } = useComponentsList(activeCategory);
@@ -78,11 +82,96 @@ const Components = () => {
       
       if (response.ok) {
         refetch(); // Refresh component list
+        toast({
+          title: "Component deleted",
+          description: "The component has been removed successfully.",
+        });
       }
     } catch (error) {
       console.error('Failed to delete component:', error);
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete the component. Please try again.",
+        variant: "destructive",
+      });
     }
   };
+
+  const handleToggleSelection = (id: string) => {
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.size === components.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(components.map(c => c.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    
+    const count = selectedIds.size;
+    if (!window.confirm(`Are you sure you want to delete ${count} component(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const deletePromises = Array.from(selectedIds).map(id =>
+        fetch(`http://localhost:3001/api/components/${id}`, {
+          method: 'DELETE',
+        })
+      );
+
+      const results = await Promise.all(deletePromises);
+      const successCount = results.filter(r => r.ok).length;
+
+      if (successCount > 0) {
+        setSelectedIds(new Set());
+        setSelectionMode(false);
+        refetch();
+        toast({
+          title: "Components deleted",
+          description: `Successfully deleted ${successCount} component(s).`,
+        });
+      }
+
+      if (successCount < count) {
+        toast({
+          title: "Partial failure",
+          description: `${count - successCount} component(s) failed to delete.`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to delete components:', error);
+      toast({
+        title: "Delete failed",
+        description: "Failed to delete components. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelSelection = () => {
+    setSelectedIds(new Set());
+    setSelectionMode(false);
+  };
+
+  // Reset selection when category changes
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setSelectionMode(false);
+  }, [activeCategory]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -103,9 +192,48 @@ const Components = () => {
 
           {/* Main Content */}
           <div className="flex-1 min-w-0 px-6">
-            {/* Bulk Import Button (Visible on Desktop) */}
+            {/* Admin Actions */}
             {isAdmin && (
-              <div className="mb-6 flex justify-end">
+              <div className="mb-6 flex justify-between items-center gap-4">
+                <div className="flex items-center gap-2">
+                  {selectionMode ? (
+                    <>
+                      <Button
+                        onClick={handleSelectAll}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {selectedIds.size === components.length ? 'Deselect All' : 'Select All'}
+                      </Button>
+                      <Button
+                        onClick={handleBulkDelete}
+                        variant="destructive"
+                        size="sm"
+                        disabled={selectedIds.size === 0}
+                        className="gap-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete Selected ({selectedIds.size})
+                      </Button>
+                      <Button
+                        onClick={handleCancelSelection}
+                        variant="ghost"
+                        size="sm"
+                      >
+                        Cancel
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      onClick={() => setSelectionMode(true)}
+                      variant="outline"
+                      size="sm"
+                      disabled={components.length === 0}
+                    >
+                      Select Multiple
+                    </Button>
+                  )}
+                </div>
                 <Button 
                   onClick={() => setBulkImportOpen(true)}
                   variant="outline"
@@ -137,6 +265,9 @@ const Components = () => {
                       onCopy={() => handleCopyCode(component)}
                       onEdit={() => handleEdit(component)}
                       onDelete={() => handleDelete(component.id)}
+                      selectionMode={selectionMode}
+                      isSelected={selectedIds.has(component.id)}
+                      onToggleSelect={() => handleToggleSelection(component.id)}
                     />
                   ))}
                 </section>

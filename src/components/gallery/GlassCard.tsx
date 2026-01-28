@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import { Copy, Check, Trash2, Edit } from "lucide-react";
 import { useState, ReactNode } from "react";
 import { useAdmin } from "@/contexts/AdminContext";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface GlassCardProps {
   children: ReactNode;
@@ -39,6 +40,9 @@ interface ComponentPreviewCardProps {
   onCopy: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  selectionMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: () => void;
 }
 
 export const ComponentPreviewCard = ({
@@ -49,6 +53,9 @@ export const ComponentPreviewCard = ({
   onCopy,
   onEdit,
   onDelete,
+  selectionMode = false,
+  isSelected = false,
+  onToggleSelect,
 }: ComponentPreviewCardProps) => {
   const [copied, setCopied] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -61,12 +68,21 @@ export const ComponentPreviewCard = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleCardClick = () => {
+    if (selectionMode && onToggleSelect) {
+      onToggleSelect();
+    } else {
+      onView();
+    }
+  };
+
   return (
     <GlassCard
-      onClick={onView}
+      onClick={handleCardClick}
       className={cn(
         "group",
-        isHovered && "ring-1 ring-primary/30"
+        isHovered && "ring-1 ring-primary/30",
+        isSelected && "ring-2 ring-primary"
       )}
     >
       <div
@@ -74,6 +90,18 @@ export const ComponentPreviewCard = ({
         onMouseLeave={() => setIsHovered(false)}
         className="relative"
       >
+        {/* Selection Checkbox (top-left corner) */}
+        {selectionMode && (
+          <div className="absolute top-3 left-3 z-20">
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={onToggleSelect}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-background/80 backdrop-blur-sm"
+            />
+          </div>
+        )}
+
         {/* Preview Area */}
         <div className="relative h-48 flex items-center justify-center p-6 bg-gradient-to-br from-surface-dark to-background overflow-hidden">
           {/* Subtle grid pattern */}
@@ -108,50 +136,52 @@ export const ComponentPreviewCard = ({
             <span className="text-xs text-muted-foreground">{category}</span>
           </div>
 
-          <div className="flex items-center gap-1">
-            {isAdmin && onEdit && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onEdit();
-                }}
-                className="p-2 rounded-lg transition-all duration-200 hover:bg-blue-500/10 hover:text-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                aria-label="Edit component"
-              >
-                <Edit className="w-4 h-4" />
-              </button>
-            )}
-            {isAdmin && onDelete && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
-                    onDelete();
-                  }
-                }}
-                className="p-2 rounded-lg transition-all duration-200 hover:bg-red-500/10 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/50"
-                aria-label="Delete component"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
-            <button
-              onClick={handleCopy}
-              className={cn(
-                "p-2 rounded-lg transition-all duration-200",
-                "hover:bg-primary/10 hover:text-primary",
-                "focus:outline-none focus:ring-2 focus:ring-primary/50",
-                copied && "text-accent-green copy-success"
+          {!selectionMode && (
+            <div className="flex items-center gap-1">
+              {isAdmin && onEdit && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit();
+                  }}
+                  className="p-2 rounded-lg transition-all duration-200 hover:bg-blue-500/10 hover:text-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  aria-label="Edit component"
+                >
+                  <Edit className="w-4 h-4" />
+                </button>
               )}
-              aria-label={copied ? "Copied!" : "Copy code"}
-            >
-              {copied ? (
-                <Check className="w-4 h-4" />
-              ) : (
-                <Copy className="w-4 h-4" />
+              {isAdmin && onDelete && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
+                      onDelete();
+                    }
+                  }}
+                  className="p-2 rounded-lg transition-all duration-200 hover:bg-red-500/10 hover:text-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/50"
+                  aria-label="Delete component"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               )}
-            </button>
-          </div>
+              <button
+                onClick={handleCopy}
+                className={cn(
+                  "p-2 rounded-lg transition-all duration-200",
+                  "hover:bg-primary/10 hover:text-primary",
+                  "focus:outline-none focus:ring-2 focus:ring-primary/50",
+                  copied && "text-accent-green copy-success"
+                )}
+                aria-label={copied ? "Copied!" : "Copy code"}
+              >
+                {copied ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  <Copy className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </GlassCard>
