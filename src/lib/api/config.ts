@@ -1,7 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
   // Backend API URL
-  baseUrl: import.meta.env.VITE_API_BASE_URL || "https://ui-blocks-wfbw.vercel.app",
+  baseUrl: import.meta.env.VITE_API_BASE_URL || "https://uiblocks.onrender.com",
   
   // Set to false to use real database
   useMockData: false,
