@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Sparkles, Search, Plus, LogOut } from "lucide-react";
+import { Sparkles, Search, Plus, LogOut, Github, Star } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAdmin } from "@/contexts/AdminContext";
 
@@ -42,8 +42,8 @@ export const TopBar = ({ className, onSearchClick, onLoginClick, onCreateClick }
           {/* Logo */}
           <button onClick={() => navigate("/")} className="flex items-center gap-2 group">
             <div className="relative">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent-purple flex items-center justify-center">
-                <Sparkles className="w-4 h-4 text-primary-foreground" />
+              <div className="w-8 h-8 rounded-lg overflow-hidden">
+                <img src="/uiblocks.png" alt="UIBlocks" className="w-full h-full object-cover" />
               </div>
               <div className="absolute inset-0 rounded-lg bg-primary/50 blur-lg opacity-0 group-hover:opacity-50 transition-opacity duration-300" />
             </div>
@@ -81,6 +81,16 @@ export const TopBar = ({ className, onSearchClick, onLoginClick, onCreateClick }
 
           {/* Actions */}
           <div className="flex items-center gap-3">
+            <a
+              href="https://github.com/Sujay149/UIBlocks"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="pill-glass flex items-center gap-2 hover:bg-primary/10 transition-all duration-200 group"
+            >
+              <Github className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+              <span className="text-muted-foreground text-sm hidden sm:inline group-hover:text-foreground transition-colors">Star on GitHub</span>
+              <Star className="w-3.5 h-3.5 text-muted-foreground group-hover:text-yellow-500 transition-colors hidden sm:inline" />
+            </a>
             {onCreateClick && (
               <button
                 onClick={onCreateClick}

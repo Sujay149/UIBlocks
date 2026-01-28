@@ -19,6 +19,61 @@ export const CreateComponentModal = ({ isOpen, onClose, onSuccess }: CreateCompo
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  
+  // Comprehensive list of all categories (using Set to ensure no duplicates)
+  const categories = Array.from(new Set([
+    "Alerts",
+    "Avatars",
+    "Accordions",
+    "Badges", 
+    "Breadcrumbs",
+    "Buttons", 
+    "Calendar",
+    "Cards", 
+    "Carousel",
+    "Charts",
+    "Checkbox",
+    "CTA",
+    "Date Picker",
+    "Dialogs",
+    "Drawers",
+    "Dropdown",
+    "Features",
+    "File Upload",
+    "Footers",
+    "Forms", 
+    "Graphs",
+    "Headers",
+    "Hero Sections",
+    "Inputs", 
+    "Layouts", 
+    "Loaders",
+    "Maps",
+    "Menus",
+    "Modals", 
+    "Navigation", 
+    "Pagination",
+    "Popover",
+    "Pricing",
+    "Progress Bars",
+    "Radio",
+    "Search",
+    "Select",
+    "Sidebars",
+    "Skeletons",
+    "Sliders",
+    "Spinners",
+    "Stats",
+    "Switch",
+    "Tables", 
+    "Tabs",
+    "Timeline",
+    "Toast",
+    "Toggle",
+    "Tooltips",
+    "Typography",
+    "Other"
+  ])).sort();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -177,15 +232,11 @@ export const CreateComponentModal = ({ isOpen, onClose, onSuccess }: CreateCompo
                 required
               >
                 <option value="" className="bg-background text-foreground">Select a category</option>
-                <option value="buttons" className="bg-background text-foreground">Buttons</option>
-                <option value="cards" className="bg-background text-foreground">Cards</option>
-                <option value="inputs" className="bg-background text-foreground">Inputs</option>
-                <option value="badges" className="bg-background text-foreground">Badges</option>
-                <option value="modals" className="bg-background text-foreground">Modals</option>
-                <option value="navigation" className="bg-background text-foreground">Navigation</option>
-                <option value="alerts" className="bg-background text-foreground">Alerts</option>
-                <option value="forms" className="bg-background text-foreground">Forms</option>
-                <option value="other" className="bg-background text-foreground">Other</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat.toLowerCase().replace(/\s+/g, '-')} className="bg-background text-foreground py-2">
+                    {cat}
+                  </option>
+                ))}
               </select>
             </div>
           </div>

@@ -9,6 +9,8 @@ import { useComponentsList } from "@/hooks/useComponents";
 import { UIComponentWithPreview } from "@/lib/api/types";
 import { Sparkles, Loader2, ArrowRight, Zap, Copy, Palette, Github, Code2, Heart, Shield, TrendingUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { BackgroundPaths } from "@/components/ui/background-paths";
+import { motion } from "framer-motion";
 
 const Index = () => {
   const [selectedComponent, setSelectedComponent] = useState<UIComponentWithPreview | null>(null);
@@ -79,69 +81,101 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Background Gradient Orbs */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary/10 blur-[120px]" />
-        <div className="absolute bottom-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-accent-purple/10 blur-[150px]" />
-        <div className="absolute top-[40%] right-[20%] w-[300px] h-[300px] rounded-full bg-accent-cyan/5 blur-[100px]" />
-      </div>
-
       <TopBar onLoginClick={() => setLoginOpen(true)} />
 
-      <main className="relative pt-32 pb-20 px-6">
+      <main className="relative pb-20">
         <div className="max-w-7xl mx-auto">
-          {/* Hero Section */}
-          <section className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-6">
-              <Sparkles className="w-4 h-4 text-primary" />
-              <span className="text-sm font-medium text-muted-foreground">
-                Glassmorphic UI Components
-              </span>
-            </div>
-            
-            <h1 className="text-5xl md:text-6xl font-bold mb-4">
-              <span className="text-foreground">UI</span>
-              <span className="gradient-text">Blocks</span>
-            </h1>
-            
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-              A collection of beautiful, animated UI components built with glassmorphism. 
-              Hover to preview, click to explore, copy to use.
-            </p>
-
-            {/* Stats */}
-            <div className="flex items-center justify-center gap-8 text-sm mb-8">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold text-foreground">{allComponents.length}+</span>
-                <span className="text-muted-foreground">Components</span>
-              </div>
-              <div className="w-px h-8 bg-border" />
-              <div className="flex items-center gap-2">
-                <span className="text-2xl font-bold gradient-text">Free</span>
-                <span className="text-muted-foreground">Forever</span>
-              </div>
-            </div>
-
-            {/* CTA Buttons */}
-            <div className="flex items-center justify-center gap-4">
-              <button
-                onClick={() => navigate("/components")}
-                className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm overflow-hidden group transition-all duration-300 hover:shadow-glow"
+          {/* Hero Section with Background Paths */}
+          <section className="relative -mt-20">
+            <BackgroundPaths title="">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 1 }}
+                className="max-w-4xl mx-auto"
               >
-                <span className="relative z-10 flex items-center gap-2">
-                  Browse All Components
-                  <ArrowRight className="w-4 h-4" />
-                </span>
-              </button>
-              <button
-                onClick={() => setSearchOpen(true)}
-                className="px-6 py-3 rounded-xl glass font-medium text-sm hover:bg-primary/10 transition-all duration-200"
-              >
-                Search Components
-              </button>
-            </div>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-6">
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Glassmorphic UI Components
+                  </span>
+                </div>
+                
+                <h1 className="text-5xl md:text-7xl font-bold mb-4 tracking-tight">
+                  <motion.span
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2, duration: 0.8 }}
+                    className="inline-block text-foreground"
+                  >
+                    UI
+                  </motion.span>
+                  <motion.span
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.4, duration: 0.8 }}
+                    className="inline-block gradient-text ml-3"
+                  >
+                    Blocks
+                  </motion.span>
+                </h1>
+                
+                <motion.p
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.6, duration: 0.8 }}
+                  className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8"
+                >
+                  A collection of beautiful, animated UI components built with glassmorphism. 
+                  Hover to preview, click to explore, copy to use.
+                </motion.p>
+
+                {/* Stats */}
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.8, duration: 0.8 }}
+                  className="flex items-center justify-center gap-8 text-sm mb-8"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold text-foreground">{allComponents.length}+</span>
+                    <span className="text-muted-foreground">Components</span>
+                  </div>
+                  <div className="w-px h-8 bg-border" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-bold gradient-text">Free</span>
+                    <span className="text-muted-foreground">Forever</span>
+                  </div>
+                </motion.div>
+
+                {/* CTA Buttons */}
+                <motion.div
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 1, duration: 0.8 }}
+                  className="flex items-center justify-center gap-4"
+                >
+                  <button
+                    onClick={() => navigate("/components")}
+                    className="px-6 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm overflow-hidden group transition-all duration-300 hover:shadow-glow"
+                  >
+                    <span className="relative z-10 flex items-center gap-2">
+                      Browse All Components
+                      <ArrowRight className="w-4 h-4" />
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setSearchOpen(true)}
+                    className="px-6 py-3 rounded-xl glass font-medium text-sm hover:bg-primary/10 transition-all duration-200"
+                  >
+                    Search Components
+                  </button>
+                </motion.div>
+              </motion.div>
+            </BackgroundPaths>
           </section>
 
+          <div className="px-6">
           {/* Featured Components Section */}
           <section className="mb-16">
             <div className="flex items-center justify-between mb-8">
@@ -350,7 +384,7 @@ const Index = () => {
                     </span>
                   </button>
                   <button
-                    onClick={() => window.open("https://github.com", "_blank")}
+                    onClick={() => window.open("https://github.com/Sujay149/UIBlocks", "_blank")}
                     className="px-8 py-4 rounded-xl glass font-medium hover:bg-primary/10 transition-all duration-200 flex items-center gap-2"
                   >
                     <Github className="w-5 h-5" />
@@ -367,6 +401,7 @@ const Index = () => {
               <p className="text-muted-foreground">No components available.</p>
             </div>
           )}
+          </div>
         </div>
       </main>
 
@@ -407,7 +442,7 @@ const Index = () => {
             {/* Brand Column */}
             <div className="md:col-span-2">
               <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-5 h-5 text-primary" />
+                <img src="/uiblocks.png" alt="UIBlocks" className="w-6 h-6 rounded object-cover" />
                 <span className="text-lg font-bold">
                   <span className="text-foreground">UIBlocks</span>
                   <span className="gradient-text">X</span>
@@ -419,7 +454,7 @@ const Index = () => {
               </p>
               <div className="flex items-center gap-3">
                 <a 
-                  href="https://github.com" 
+                  href="https://github.com/Sujay149/UIBlocks" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="w-10 h-10 rounded-lg glass flex items-center justify-center hover:bg-primary/10 transition-all duration-200"
@@ -468,7 +503,7 @@ const Index = () => {
                   <a href="#" className="hover:text-foreground transition-colors">Submit Component</a>
                 </li>
                 <li>
-                  <a href="https://github.com" className="hover:text-foreground transition-colors">GitHub</a>
+                  <a href="https://github.com/Sujay149/UIBlocks" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">GitHub</a>
                 </li>
                 <li>
                   <a href="#" className="hover:text-foreground transition-colors">Changelog</a>
