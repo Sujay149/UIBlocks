@@ -67,7 +67,7 @@ const Index = () => {
     if (!window.confirm('Are you sure you want to delete this component?')) return;
     
     try {
-      const response = await fetch(`http://localhost:3001/api/components/${id}`, {
+      const response = await fetch(`/api/components/${id}`, {
         method: 'DELETE',
       });
       

@@ -1,0 +1,269 @@
+# ============================================================
+# UIBlocks - CI/CD Pipeline
+# Trigger: push to main or manual workflow_dispatch
+# Builds, tests, Dockerizes, and deploys to AWS EC2
+# ============================================================
+
+name: UIBlocks CI/CD Pipeline
+
+env:
+  # --- Docker Configuration ---
+  DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/uiblocks
+  CONTAINER_NAME: uiblocks
+
+  # --- Deployment Configuration ---
+  EC2_APP_DIR: /home/ubuntu/uiblocks
+
+  # --- Application Configuration ---
+  APP_PORT: 3001
+  NODE_ENV: production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      deploy_to:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================================
+  # JOB 1: Build
+  # ============================================================
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Start Build Timer
+        run: echo "BUILD_START=$(date +%s)" >> $GITHUB_ENV
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install Dependencies
+        run: npm ci
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+
+      - name: Run Linter
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Run Tests
+        run: npm test
+        continue-on-error: true
+
+      - name: Build Application
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
+
+      - name: Verify Build Output
+        run: |
+          if [ -d "dist" ]; then
+            echo "Build successful! Output size:"
+            du -sh dist/
+          else
+            echo "Build failed: dist/ directory not found"
+            exit 1
+          fi
+
+      - name: Calculate Build Time
+        run: |
+          BUILD_END=$(date +%s)
+          DURATION=$((BUILD_END - BUILD_START))
+          echo "Build completed in $DURATION seconds"
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+          retention-days: 1
+
+  # ============================================================
+  # JOB 2: Docker Build & Push
+  # ============================================================
+  docker:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: [build]
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Start Docker Timer
+        run: echo "DOCKER_START=$(date +%s)" >> $GITHUB_ENV
+
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: dist/
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Docker Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_IMAGE }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=long
+            type=raw,value=${{ github.sha }}
+          labels: |
+            org.opencontainers.image.title=UIBlocks
+            org.opencontainers.image.description=UIBlocks Component Gallery
+            org.opencontainers.image.url=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.version=${{ github.sha }}
+            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker Layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build & Push Docker Image
+        uses: docker/build-push-action@v6
+        id: docker_build
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+          build-args: |
+            VITE_API_BASE_URL=${{ secrets.VITE_API_BASE_URL }}
+
+      - name: Image Digest
+        run: echo "Pushed digest ${{ steps.docker_build.outputs.digest }}"
+
+      - name: Move Cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      - name: Calculate Docker Time
+        run: |
+          DOCKER_END=$(date +%s)
+          DURATION=$((DOCKER_END - DOCKER_START))
+          echo "Docker build completed in $DURATION seconds"
+
+  # ============================================================
+  # JOB 3: Deploy to EC2
+  # ============================================================
+  deploy:
+    name: Deploy to AWS EC2
+    runs-on: ubuntu-latest
+    needs: [docker]
+    timeout-minutes: 15
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Start Deploy Timer
+        run: echo "DEPLOY_START=$(date +%s)" >> $GITHUB_ENV
+
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Copy Scripts to EC2
+        run: |
+          scp scripts/deploy.sh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/home/ubuntu/deploy.sh
+          scp scripts/rollback.sh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:/home/ubuntu/rollback.sh
+
+      - name: Execute Deployment on EC2
+        run: |
+          ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "chmod +x /home/ubuntu/deploy.sh /home/ubuntu/rollback.sh && bash /home/ubuntu/deploy.sh"
+
+      - name: Health Check
+        run: |
+          echo "Performing health check..."
+          sleep 10
+          MAX_RETRIES=12
+          RETRY_COUNT=0
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            HTTP_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+              --connect-timeout 5 \
+              --max-time 10 \
+              http://${{ secrets.EC2_HOST }}:3001/api/health 2>/dev/null || echo "000")
+            if [ "$HTTP_RESPONSE" = "200" ]; then
+              echo "Health check passed! (HTTP $HTTP_RESPONSE)"
+              HEALTH_DATA=$(curl -s --max-time 5 http://${{ secrets.EC2_HOST }}:3001/api/health 2>/dev/null)
+              echo "Health Data: $HEALTH_DATA"
+              break
+            else
+              echo "Health check attempt $RETRY_COUNT/$MAX_RETRIES - HTTP $HTTP_RESPONSE"
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                sleep 10
+              fi
+            fi
+          done
+          if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+            echo "Health check failed after $MAX_RETRIES attempts"
+            exit 1
+          fi
+
+      - name: Calculate Deploy Time
+        run: |
+          DEPLOY_END=$(date +%s)
+          DURATION=$((DEPLOY_END - DEPLOY_START))
+          echo "Deployment completed in $DURATION seconds"
+
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo ""
+          echo "==========================================="
+          echo "  UIBlocks Deployment Summary"
+          echo "==========================================="
+          echo "  Repository:   ${{ github.repository }}"
+          echo "  Branch:       ${{ github.ref_name }}"
+          echo "  Commit:       ${{ github.sha }}"
+          echo "  Author:       ${{ github.actor }}"
+          echo "  Docker Image: ${{ env.DOCKER_IMAGE }}:${{ github.sha }}"
+          echo "  EC2 Host:     ${{ secrets.EC2_HOST }}"
+          echo "  Application:  http://${{ secrets.EC2_HOST }}:${{ env.APP_PORT }}"
+          echo "==========================================="
