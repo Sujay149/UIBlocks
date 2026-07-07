@@ -1,5 +1,8 @@
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Vercel provides environment variables automatically
 // No need to load .env file in production
@@ -16,10 +19,19 @@ import {
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const clientBuildPath = path.resolve(__dirname, '../dist');
+const clientIndexPath = path.join(clientBuildPath, 'index.html');
+const hasClientBuild = fs.existsSync(clientIndexPath);
 
 // Middleware - Allow all origins for now
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+
+if (hasClientBuild) {
+  app.use(express.static(clientBuildPath));
+}
 
 // Initialize database
 initDatabase().catch(console.error);
@@ -124,6 +136,12 @@ app.delete('/api/components/:id', async (req, res) => {
     res.status(500).json({ error: 'Failed to delete component' });
   }
 });
+
+if (hasClientBuild) {
+  app.get(/^(?!\/api).*/, (req, res) => {
+    res.sendFile(clientIndexPath);
+  });
+}
 
 // Start server
 app.listen(PORT, () => {
